@@ -1,4 +1,7 @@
+* Setup
 
+1. IAM user that has access to the Cost and Usage Report (CUR): with the correct policies
+2. S3 bucket storing Athena query results which OpenCost user has permission to access
 
 * Test script `upload_tos3.py` for upload parquet files to S3 bucket
 
@@ -37,4 +40,37 @@ LOCATION 's3://opencost-cur-bucket-demo/AWS_CUR_Test/';
 
 /* test query */
 SELECT * FROM cost_and_usage.cur_table;
+```
+
+* For Cloud Costs create `cloud-integration.json` as a secret `kubectl create secret generic cloud-costs --from-file=./cloud-integration.json --namespace opencost`
+
+```json
+{
+  "aws": {
+    "athena": [
+      {
+        "bucket": "<ATHENA_BUCKET_NAME>",
+        "region": "<ATHENA_REGION>",
+        "database": "<ATHENA_DATABASE>",
+        "table": "<ATHENA_TABLE>",
+        "workgroup": "<ATHENA_WORKGROUP>",
+        "account": "<ACCOUNT_NUMBER>",
+        "authorizer": {
+          "authorizerType": "AWSAccessKey",
+          "id": "AKXXXXXXXXXXXXXXXXXXXX",
+          "secret": "superdupersecret/superdupersecret"
+        }
+      }
+    ]
+  }
+}
+```
+
+* Upgrade chart installation
+
+```bash
+helm upgrade -i opencost opencost-charts/opencost \
+  --set opencost.cloudIntegrationSecret=cloud-costs \
+  --set opencost.cloudCost.enabled=true \
+  -n opencost
 ```
